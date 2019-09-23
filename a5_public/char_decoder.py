@@ -27,7 +27,13 @@ class CharDecoder(nn.Module):
         ### Hint: - Use target_vocab.char2id to access the character vocabulary for the target language.
         ###       - Set the padding_idx argument of the embedding matrix.
         ###       - Create a new Embedding layer. Do not reuse embeddings created in Part 1 of this assignment.
-        
+        super(CharDecoder, self).__init__()
+        self.charDecoder = nn.LSTM(char_embedding_size, hidden_size)
+        self.char_output_projection = nn.Linear(hidden_size, len(target_vocab.char2id), bias=True)
+        self.decoderCharEmb = nn.Embedding(len(target_vocab.char2id),
+                                           char_embedding_size,
+                                           padding_idx=target_vocab.char2id['<pad>'])
+        self.target_vocab = target_vocab
 
         ### END YOUR CODE
 
@@ -44,8 +50,10 @@ class CharDecoder(nn.Module):
         """
         ### YOUR CODE HERE for part 2b
         ### TODO - Implement the forward pass of the character decoder.
-        
-        
+        char_embeddings = self.decoderCharEmb(input)
+        hiddens, dec_hidden = self.charDecoder(char_embeddings, dec_hidden)
+        scores = self.char_output_projection(hiddens)
+        return scores, dec_hidden
         ### END YOUR CODE 
 
 
@@ -53,7 +61,8 @@ class CharDecoder(nn.Module):
         """ Forward computation during training.
 
         @param char_sequence: tensor of integers, shape (length, batch). Note that "length" here and in forward() need not be the same.
-        @param dec_hidden: initial internal state of the LSTM, obtained from the output of the word-level decoder. A tuple of two tensors of shape (1, batch, hidden_size)
+        @param dec_hidden: initial internal state of the LSTM, obtained from the output of the word-level decoder.
+                            A tuple of two tensors of shape (1, batch, hidden_size)
 
         @returns The cross-entropy loss, computed as the *sum* of cross-entropy losses of all the words in the batch.
         """
@@ -63,7 +72,14 @@ class CharDecoder(nn.Module):
         ### Hint: - Make sure padding characters do not contribute to the cross-entropy loss.
         ###       - char_sequence corresponds to the sequence x_1 ... x_{n+1} from the handout (e.g., <START>,m,u,s,i,c,<END>).
 
-
+        # CrossEntropyLoss
+        input = char_sequence[:-1]
+        scores, dec_hidden = self.forward(input, dec_hidden)  # (len, batch, vocab)
+        (length, batch, vocab) = scores.shape
+        scores = scores.view((length * batch, vocab))
+        target = char_sequence[1:].view((length * batch))
+        loss_func = nn.CrossEntropyLoss(reduction='sum', ignore_index=self.target_vocab.char2id['<pad>'])
+        return loss_func(scores, target)  # inp: (N, C), (N)
         ### END YOUR CODE
 
     def decode_greedy(self, initialStates, device, max_length=21):

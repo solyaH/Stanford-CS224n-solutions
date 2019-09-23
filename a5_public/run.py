@@ -90,11 +90,11 @@ def evaluate_ppl(model, dev_data, batch_size=32):
     return ppl
 
 
-def compute_corpus_level_bleu_score(references: List[List[str]], hypotheses: List[Hypothesis]) -> float:
+def compute_corpus_level_bleu_score(references, hypotheses):
     """ Given decoding results and reference sentences, compute corpus-level BLEU score.
     @param references (List[List[str]]): a list of gold-standard reference target sentences
     @param hypotheses (List[Hypothesis]): a list of hypotheses, one for each reference
-    @returns bleu_score: corpus-level BLEU score
+    @returns bleu_score (float): corpus-level BLEU score
     """
     if references[0][0] == '<s>':
         references = [ref[1:-1] for ref in references]
@@ -103,7 +103,7 @@ def compute_corpus_level_bleu_score(references: List[List[str]], hypotheses: Lis
     return bleu_score
 
 
-def train(args: Dict):
+def train(args):
     """ Train the NMT Model.
     @param args (Dict): args from cmd line
     """
@@ -260,11 +260,11 @@ def train(args: Dict):
                 exit(0)
 
 
-def decode(args: Dict[str, str]):
+def decode(args):
     """ Performs decoding on a test set, and save the best-scoring decoding results.
     If the target gold-standard sentences are given, the function also computes
     corpus-level BLEU score.
-    @param args (Dict): args from cmd line
+    @param args (Dict[str, str]): args from cmd line
     """
 
     print("load test source sentences from [{}]".format(args['TEST_SOURCE_FILE']), file=sys.stderr)

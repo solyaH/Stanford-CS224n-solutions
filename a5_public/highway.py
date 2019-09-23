@@ -31,21 +31,9 @@ class Highway(nn.Module):
                                         b = batch_size, e = size of word embedding.
         @returns highway_out(Tensor): Tensor of highway output with shape (b, ).
         """
-        conv_out_projection = F.relu(self.c_projection(conv_out))  # W_proj(c_o) -> (b, e)*(e, e) -> (b, e)
-        gate_projection = F.sigmoid(self.g_projection(conv_out))
+        conv_out_projection = torch.relu(self.c_projection(conv_out))  # W_proj(c_o) -> (b, e)*(e, e) -> (b, e)
+        gate_projection = torch.sigmoid(self.g_projection(conv_out))
 
-        # gate_projection*conv_out_projection + (1-gate_projection)*conv_out
-        # (b, 1, e) x (b, e, 1) = (b, 1)
-        g_proj_view = gate_projection.view(gate_projection.size(0), 1, gate_projection.size(1))
-        с_proj_view = conv_out_projection.view(conv_out_projection.size(0), conv_out_projection.size(1), 1)
-        conv_out_view = conv_out.view(conv_out.size(0), conv_out.size(1), 1)
-
-        first_add = torch.bmm(g_proj_view, с_proj_view)
-
-        # batch_size = gate_projection.size(0)
-        # o_prev = torch.eye(batch_size, gate_projection.size(1))
-        second_add = torch.bmm(1 - g_proj_view, conv_out_view)
-
-        highway_out = torch.add(first_add, second_add)
+        highway_out = gate_projection*conv_out_projection + (1-gate_projection)*conv_out
 
         return highway_out
