@@ -38,7 +38,7 @@ class CNN(nn.Module):
 
     def forward(self, x_reshaped):
         """
-        @param x_reshaped(Tensor): Tensor of (max_sentence_length, b, max_word_length)
+        @param x_reshaped(Tensor): Tensor of (b, embed_char_size, max_word_length)
         @returns conv_out(Tensor): Tensor of cnn output with shape (b, embed_word_size), where
                                    embed_word_size = size of the final word embedding
         """

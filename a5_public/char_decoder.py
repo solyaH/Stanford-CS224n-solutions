@@ -8,6 +8,7 @@ CS224N 2018-19: Homework 5
 import torch
 import torch.nn as nn
 
+
 class CharDecoder(nn.Module):
     def __init__(self, hidden_size, char_embedding_size=50, target_vocab=None):
         """ Init Character Decoder.
@@ -37,8 +38,6 @@ class CharDecoder(nn.Module):
 
         ### END YOUR CODE
 
-
-    
     def forward(self, input, dec_hidden=None):
         """ Forward pass of character decoder.
 
@@ -55,7 +54,6 @@ class CharDecoder(nn.Module):
         scores = self.char_output_projection(hiddens)
         return scores, dec_hidden
         ### END YOUR CODE 
-
 
     def train_forward(self, char_sequence, dec_hidden=None):
         """ Forward computation during training.
@@ -77,7 +75,7 @@ class CharDecoder(nn.Module):
         scores, dec_hidden = self.forward(input, dec_hidden)  # (len, batch, vocab)
         (length, batch, vocab) = scores.shape
         scores = scores.view((length * batch, vocab))
-        target = char_sequence[1:].view((length * batch))
+        target = char_sequence[1:].contiguous().view((length * batch))
         loss_func = nn.CrossEntropyLoss(reduction='sum', ignore_index=self.target_vocab.char2id['<pad>'])
         return loss_func(scores, target)  # inp: (N, C), (N)
         ### END YOUR CODE
@@ -97,9 +95,26 @@ class CharDecoder(nn.Module):
         ### Hints:
         ###      - Use target_vocab.char2id and target_vocab.id2char to convert between integers and characters
         ###      - Use torch.tensor(..., device=device) to turn a list of character indices into a tensor.
-        ###      - We use curly brackets as start-of-word and end-of-word characters. That is, use the character '{' for <START> and '}' for <END>.
+        ###      - We use curly brackets as start-of-word and end-of-word characters. That is, use the character
+        ###       '{' for <START> and '}' for <END>.
         ###        Their indices are self.target_vocab.start_of_word and self.target_vocab.end_of_word, respectively.
-        
-        
-        ### END YOUR CODE
 
+        batch_size = initialStates[0].shape[1]
+        output_words = [['', False] for _ in range(batch_size)]
+
+        current_char = torch.tensor([[self.target_vocab.start_of_word]*batch_size], device=device)
+        dec_state = initialStates
+        for _ in range(max_length):
+            scores, dec_state = self.forward(current_char, dec_state)
+            current_char = scores.argmax(dim=2)  # (length, batch, self.vocab_size)
+            for str_index, char_index in enumerate(current_char[0]):
+                char_idx = char_index.item()
+                if not output_words[str_index][1]:
+                    if char_idx != self.target_vocab.end_of_word:
+                        output_words[str_index][0] += self.target_vocab.id2char[char_idx]
+                    else:
+                        output_words[str_index][1] = True
+
+        return [el[0] for el in output_words]
+
+    ### END YOUR CODE

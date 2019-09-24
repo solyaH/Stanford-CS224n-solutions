@@ -29,7 +29,7 @@ class Highway(nn.Module):
         """
         @param conv_out (Tensor): Tensor of convolutional network output with shape (b, e), where
                                         b = batch_size, e = size of word embedding.
-        @returns highway_out(Tensor): Tensor of highway output with shape (b, ).
+        @returns highway_out(Tensor): Tensor of highway output with shape (b, e).
         """
         conv_out_projection = torch.relu(self.c_projection(conv_out))  # W_proj(c_o) -> (b, e)*(e, e) -> (b, e)
         gate_projection = torch.sigmoid(self.g_projection(conv_out))
